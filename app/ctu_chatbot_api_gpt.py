@@ -6,7 +6,7 @@ import requests
 import re
 import openai
 
-# Load biến môi trường từ file .env
+# Load biến môi trường
 load_dotenv()
 
 from langchain_openai import OpenAI, OpenAIEmbeddings
@@ -19,7 +19,7 @@ db = Chroma(persist_directory="../vectordb", embedding_function=embeddings)
 llm = OpenAI(temperature=0)
 qa = RetrievalQA.from_chain_type(llm=llm, retriever=db.as_retriever())
 
-# Lấy thời tiết từ OpenWeatherMap
+# Hàm lấy thời tiết từ OpenWeatherMap
 def get_weather(city):
     api_key = os.getenv("OWM_API_KEY")
     if not api_key:
@@ -39,7 +39,7 @@ def get_weather(city):
         print("Lỗi lấy thời tiết:", e)
         return "Xin lỗi, không thể truy cập dữ liệu thời tiết lúc này."
 
-# Fallback GPT-4o (OpenAI API chuẩn mới)
+# Fallback GPT-4o (OpenAI chuẩn mới)
 def ask_gpt(question):
     openai_api_key = os.getenv("OPENAI_API_KEY")
     client = openai.OpenAI(api_key=openai_api_key)
@@ -52,9 +52,6 @@ def ask_gpt(question):
     return response.choices[0].message.content.strip()
 
 def is_noanswer(text):
-    """
-    True nếu text là câu trả lời 'né tránh', không chắc hoặc rỗng (cả tiếng Việt/Anh)
-    """
     if not text or not text.strip():
         return True
     text_lower = text.strip().lower()
@@ -72,7 +69,7 @@ def is_noanswer(text):
     return False
 
 def ask_ctu(question):
-    # Ưu tiên nhận diện câu hỏi về thời tiết
+    # Nhận diện câu hỏi thời tiết
     q_lower = question.lower()
     if "thời tiết" in q_lower:
         city_match = re.search(r"thời tiết (.+?) hôm nay", q_lower)
@@ -92,9 +89,18 @@ def ask_ctu(question):
     else:
         return f"(Nguồn nội bộ CTU)\n{result}"
 
-# Flask API
+# Flask app
 app = Flask(__name__)
 CORS(app)
+
+# Route cho trang chủ, GET sẽ không còn lỗi 404
+@app.route("/", methods=["GET"])
+def home():
+    return (
+        "<h2>CTU Chatbot API is running.</h2>"
+        "<p>Sử dụng <b>POST /chat</b> để hỏi trợ lý AI Đại học Cần Thơ.<br>"
+        "Ví dụ curl: <code>curl -X POST https://ctuchatbot.onrender.com/chat -H 'Content-Type: application/json' -d '{\"message\": \"Đại học Cần Thơ ở đâu?\"}'</code></p>"
+    )
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -110,4 +116,3 @@ def chat():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)
-
