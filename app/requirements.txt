@@ -1,8 +1,10 @@
 flask
-flask-cors
+flask_cors
+python-dotenv
+openai
+requests
+langchain
 langchain-openai
 langchain-chroma
-langchain-community
-python-dotenv
-unstructured
+gunicorn
 
