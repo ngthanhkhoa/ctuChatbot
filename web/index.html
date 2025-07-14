@@ -156,7 +156,7 @@
     function sendMessage(text) {
       appendMsg(text, "user");
       appendMsg('', "bot", true);
-      fetch("http://127.0.0.1:8000/chat", {
+      fetch("https://ctuchatbot.onrender.com/chat", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({message: text})
