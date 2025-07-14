@@ -1,0 +1,6 @@
+data/*.pdf
+data/*.zip
+data/*.pptx
+vectordb/
+.env
+app/.env

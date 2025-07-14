@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>CTU Chatbot AI</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,700" rel="stylesheet">
+  <style>
+    body { background: #eceff4; font-family: 'Roboto', sans-serif; }
+    #container {
+      max-width: 430px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 4px 24px #0001;
+      overflow: hidden;
+      display: flex; flex-direction: column; min-height: 80vh;
+    }
+    #header {
+      padding: 22px 20px 12px 20px;
+      background: #00467f;
+      color: #fff;
+      display: flex; align-items: center;
+      gap: 10px;
+    }
+    #header img { width: 42px; height: 42px; border-radius: 12px; }
+    #header h2 { font-weight: 700; font-size: 1.3em; margin: 0; letter-spacing: 0.5px; }
+    #chat {
+      flex: 1;
+      padding: 18px 15px;
+      background: #f7f9fa;
+      font-size: 1.06em;
+      overflow-y: auto;
+      max-height: 60vh;
+      scroll-behavior: smooth;
+      /* Thanh cuộn đẹp */
+      scrollbar-width: thin;
+      scrollbar-color: #b3cdf6 #f7f9fa;
+      border-bottom: 1px solid #e6e8ea;
+    }
+    #chat::-webkit-scrollbar {
+      width: 7px;
+    }
+    #chat::-webkit-scrollbar-thumb {
+      background: #b3cdf6;
+      border-radius: 6px;
+    }
+    #chat::-webkit-scrollbar-track {
+      background: #f7f9fa;
+    }
+    .msg-row { display: flex; margin-bottom: 16px; }
+    .msg-row.user { justify-content: flex-end; }
+    .msg {
+      max-width: 74%;
+      padding: 13px 16px;
+      border-radius: 18px;
+      line-height: 1.5;
+      word-break: break-word;
+      box-shadow: 0 2px 8px #0001;
+    }
+    .msg.user {
+      background: linear-gradient(100deg, #005baa 60%, #008ef5 100%);
+      color: #fff;
+      border-bottom-right-radius: 6px;
+      margin-left: 30px;
+    }
+    .msg.bot {
+      background: #fff;
+      color: #222;
+      border-bottom-left-radius: 6px;
+      margin-right: 30px;
+    }
+    .avatar {
+      width: 38px; height: 38px; border-radius: 10px; margin-right: 7px;
+      margin-top: auto; margin-bottom: auto;
+      box-shadow: 0 1px 4px #0001;
+      background: #e6eaf0;
+      object-fit: cover;
+    }
+    .msg-row.user .avatar { display: none; }
+    #form {
+      display: flex; gap: 10px;
+      padding: 16px;
+      border-top: 1px solid #dde1e8;
+      background: #f7f9fa;
+    }
+    #input {
+      flex: 1;
+      padding: 12px 15px;
+      border: none;
+      border-radius: 14px;
+      background: #eceff4;
+      font-size: 1em;
+      outline: none;
+      box-shadow: 0 2px 4px #0001 inset;
+      transition: background 0.2s;
+    }
+    #input:focus { background: #e2e8f0; }
+    #sendBtn {
+      background: linear-gradient(90deg, #005baa 60%, #008ef5 100%);
+      border: none; color: #fff; font-weight: 700; font-size: 1.06em;
+      border-radius: 13px; padding: 0 22px; cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s;
+      box-shadow: 0 2px 8px #0001;
+    }
+    #sendBtn:active { background: #005baa; }
+    @media (max-width: 520px) {
+      #container { max-width: 100vw; border-radius: 0; min-height: 97vh;}
+      #chat { max-height: 65vh;}
+    }
+    .loading-dots span { animation: blink 1.3s infinite; opacity: 0.6; }
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s;}
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s;}
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.6;}
+      40% { opacity: 1;}
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="header">
+      <img src="https://www.ctu.edu.vn/images/upload/logo.png" alt="CTU Logo">
+      <h2>CTU Chatbot AI</h2>
+    </div>
+    <div id="chat"></div>
+    <form id="form" autocomplete="off">
+      <input id="input" type="text" placeholder="Nhập câu hỏi của bạn..." autofocus autocomplete="off">
+      <button id="sendBtn" type="submit">Gửi</button>
+    </form>
+  </div>
+  <script>
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('input');
+    const form = document.getElementById('form');
+
+    function appendMsg(text, sender = "bot", isLoading = false) {
+      const msgRow = document.createElement('div');
+      msgRow.className = 'msg-row ' + sender;
+      if(sender === "bot") {
+        const avatar = document.createElement('img');
+        avatar.className = "avatar";
+        avatar.src = "https://www.ctu.edu.vn/images/upload/logo.png";
+        avatar.alt = "Bot";
+        msgRow.appendChild(avatar);
+      }
+      const msg = document.createElement('div');
+      msg.className = 'msg ' + sender;
+      msg.innerHTML = isLoading ? '<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>' : text;
+      msgRow.appendChild(msg);
+      chat.appendChild(msgRow);
+      // Auto scroll to bottom
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function sendMessage(text) {
+      appendMsg(text, "user");
+      appendMsg('', "bot", true);
+      fetch("http://127.0.0.1:8000/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({message: text})
+      })
+      .then(res => res.json())
+      .then(data => {
+        // Xóa loading
+        const loading = document.querySelectorAll('.loading-dots');
+        if(loading.length) loading[loading.length-1].parentNode.innerHTML = data.answer;
+        chat.scrollTop = chat.scrollHeight;
+      })
+      .catch(() => {
+        const loading = document.querySelectorAll('.loading-dots');
+        if(loading.length) loading[loading.length-1].parentNode.innerHTML = "Xin lỗi, hệ thống lỗi!";
+        chat.scrollTop = chat.scrollHeight;
+      });
+    }
+
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      sendMessage(text);
+      input.value = '';
+    };
+
+    input.onkeydown = (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        form.onsubmit(e);
+      }
+    };
+
+    // Welcome message
+    window.onload = () => {
+      appendMsg('Xin chào! Tôi là trợ lý AI của Đại học Cần Thơ. Bạn cần hỏi gì?', 'bot');
+      chat.scrollTop = chat.scrollHeight;
+    }
+  </script>
+</body>
+</html>
+
