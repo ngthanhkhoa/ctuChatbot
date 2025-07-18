@@ -45,14 +45,14 @@ if not all_documents:
     exit()
 
 # Chunk và build vectordb
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=50)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=100)
 docs = text_splitter.split_documents(all_documents)
 print(f"Tổng số đoạn chunk: {len(docs)}")
 
 embeddings = OpenAIEmbeddings()
 db = Chroma(persist_directory="../vectordb", embedding_function=embeddings)
 
-batch_size = 200
+batch_size = 128
 for i in range(0, len(docs), batch_size):
     batch = docs[i:i+batch_size]
     db.add_documents(batch)
